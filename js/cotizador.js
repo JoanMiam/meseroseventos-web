@@ -101,7 +101,7 @@ function getFormData() {
 function showFieldError(fieldId, message) {
   const input = document.getElementById(fieldId);
   const errorSpan = document.getElementById(`${fieldId}Error`);
-  
+
   if (input) {
     input.classList.add('form-group__input--error');
   }
@@ -116,7 +116,7 @@ function showFieldError(fieldId, message) {
 function clearAllErrors() {
   const errorSpans = document.querySelectorAll('.form-group__error');
   const errorInputs = document.querySelectorAll('.form-group__input--error');
-  
+
   errorSpans.forEach(span => (span.textContent = ''));
   errorInputs.forEach(input => input.classList.remove('form-group__input--error'));
 }
@@ -347,7 +347,7 @@ function buildWhatsAppMessage(resumen) {
 function enviarWhatsApp(message) {
   const encodedMessage = encodeURIComponent(message);
   const url = `${CONFIG.WHATSAPP_BASE_URL}${CONFIG.WHATSAPP_NUMBER}?text=${encodedMessage}`;
-  
+
   window.open(url, '_blank');
 }
 
@@ -403,7 +403,7 @@ function initNavbar() {
 
   window.addEventListener('scroll', () => {
     const currentScrollY = window.scrollY;
-    
+
     if (currentScrollY > 50) {
       DOM.navbar.classList.add('navbar--scrolled');
     } else {
@@ -583,7 +583,7 @@ function init() {
   DOM.form.addEventListener('submit', handleFormSubmit);
 
   // Log de inicialización (para desarrollo)
-  console.log('✦ MeserosEventos — Cotizador inicializado correctamente.');
+  console.log('✦ Meseros Yucatán — Cotizador inicializado correctamente.');
 }
 
 // Arrancar cuando el DOM esté listo

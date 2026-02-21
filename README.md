@@ -1,2 +1,5 @@
-# meseroseventos-web
-Professional event service website with modular architecture, dynamic quotation system and WhatsApp integration
+# ✦ Meseros Yucatán
+
+**Atención que marca la diferencia**
+
+Sitio web profesional y elegante para servicio de meseros en Yucatán.
