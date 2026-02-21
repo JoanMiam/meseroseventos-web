@@ -19,7 +19,7 @@ const CONFIG = Object.freeze({
   PERSONAL_BARRA_POR_GRUPO: 2,
 
   // WhatsApp
-  WHATSAPP_NUMBER: '521XXXXXXXXXX', // Reemplazar con número real
+  WHATSAPP_NUMBER: '5219981447597',
   WHATSAPP_BASE_URL: 'https://wa.me/',
 
   // Validaciones
