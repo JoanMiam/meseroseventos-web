@@ -879,6 +879,36 @@ textarea {
     box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1) !important;
 }
 
+/* Date & Time Inputs — Mejor visibilidad */
+.form-group__input[type="date"],
+.form-group__input[type="time"] {
+    background: rgba(245, 241, 232, 0.95);
+    color: var(--color-bg);
+    border-color: rgba(198, 167, 94, 0.3);
+    cursor: pointer;
+}
+
+.form-group__input[type="date"]:focus,
+.form-group__input[type="time"]:focus {
+    background: var(--color-beige);
+    border-color: var(--color-gold);
+    box-shadow: 0 0 0 3px rgba(198, 167, 94, 0.15);
+}
+
+/* Date/Time picker calendar icon color */
+.form-group__input[type="date"]::-webkit-calendar-picker-indicator,
+.form-group__input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(15%) sepia(20%) saturate(1500%) hue-rotate(290deg);
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.form-group__input[type="date"]::-webkit-calendar-picker-indicator:hover,
+.form-group__input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
 .form-group__hint {
     font-size: 0.78rem;
     color: var(--color-gold-light);

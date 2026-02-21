@@ -44,6 +44,8 @@ const CONFIG = Object.freeze({
     resultBarra: '#resultBarra',
     resultBarraText: '#resultBarraText',
     barraHint: '#barraHint',
+    resultDuracion: '#resultDuracion',
+    resultDuracionText: '#resultDuracionText',
     resumenPreview: '#resumenPreview',
     resumenContent: '#resumenContent',
     btnEnviar: '#btnEnviar',
@@ -185,12 +187,6 @@ function validateForm(data) {
     showFieldError('horaFin', 'Selecciona la hora de finalización.');
   }
 
-  // Validar que fin > inicio
-  if (data.horaInicio && data.horaFin && data.horaFin <= data.horaInicio) {
-    errors.push('horaFin');
-    showFieldError('horaFin', 'La hora de fin debe ser posterior a la de inicio.');
-  }
-
   return {
     isValid: errors.length === 0,
     errors,
@@ -222,6 +218,33 @@ function calcularMeseros(mesas) {
 function calcularBarra(invitados) {
   if (!invitados || invitados <= 0) return 0;
   return Math.ceil(invitados / CONFIG.INVITADOS_POR_BARRA) * CONFIG.PERSONAL_BARRA_POR_GRUPO;
+}
+
+/**
+ * Calcula la duración del evento en horas.
+ * Considera que el evento puede terminar al día siguiente.
+ * @param {string} horaInicio - Hora de inicio en formato HH:mm.
+ * @param {string} horaFin - Hora de fin en formato HH:mm.
+ * @returns {number} Duración en horas.
+ */
+function calcularDuracion(horaInicio, horaFin) {
+  if (!horaInicio || !horaFin) return 0;
+  
+  const [horasInicio, minutosInicio] = horaInicio.split(':').map(Number);
+  const [horasFin, minutosFin] = horaFin.split(':').map(Number);
+  
+  let minutosInicioTotal = horasInicio * 60 + minutosInicio;
+  let minutosFinTotal = horasFin * 60 + minutosFin;
+  
+  // Si la hora de fin es menor, asumimos que es al día siguiente
+  if (minutosFinTotal <= minutosInicioTotal) {
+    minutosFinTotal += 24 * 60; // Agregar 24 horas
+  }
+  
+  const duracionMinutos = minutosFinTotal - minutosInicioTotal;
+  const duracionHoras = duracionMinutos / 60;
+  
+  return Math.round(duracionHoras * 10) / 10; // Redondear a 1 decimal
 }
 
 
@@ -386,6 +409,23 @@ function actualizarBarra() {
   } else {
     DOM.resultBarra.style.display = 'none';
     DOM.barraHint.style.display = barraActiva ? 'block' : 'none';
+  }
+}
+
+/**
+ * Actualiza el cálculo dinámico de duración del evento.
+ */
+function actualizarDuracion() {
+  const horaInicio = DOM.horaInicio.value;
+  const horaFin = DOM.horaFin.value;
+
+  if (horaInicio && horaFin) {
+    const duracion = calcularDuracion(horaInicio, horaFin);
+    const duracionTexto = duracion % 1 === 0 ? duracion : duracion.toFixed(1);
+    DOM.resultDuracionText.textContent = `El servicio duraría ${duracionTexto} hora(s).`;
+    DOM.resultDuracion.style.display = 'flex';
+  } else {
+    DOM.resultDuracion.style.display = 'none';
   }
 }
 
@@ -572,6 +612,8 @@ function init() {
   DOM.invitados.addEventListener('input', actualizarBarra);
   DOM.barraSi.addEventListener('change', actualizarBarra);
   DOM.barraNo.addEventListener('change', actualizarBarra);
+  DOM.horaInicio.addEventListener('input', actualizarDuracion);
+  DOM.horaFin.addEventListener('input', actualizarDuracion);
 
   // Event listeners — Limpiar errores al escribir
   const formInputs = DOM.form.querySelectorAll('.form-group__input');
