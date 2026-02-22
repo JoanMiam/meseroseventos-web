@@ -35,15 +35,11 @@ const CONFIG = Object.freeze({
     lugar: '#lugar',
     mesas: '#mesas',
     invitados: '#invitados',
-    barraSi: '#barraSi',
-    barraNo: '#barraNo',
+    personalBarra: '#personalBarra',
     horaInicio: '#horaInicio',
     horaFin: '#horaFin',
     resultMeseros: '#resultMeseros',
     resultMeserosText: '#resultMeserosText',
-    resultBarra: '#resultBarra',
-    resultBarraText: '#resultBarraText',
-    barraHint: '#barraHint',
     resultDuracion: '#resultDuracion',
     resultDuracionText: '#resultDuracionText',
     resumenPreview: '#resumenPreview',
@@ -84,7 +80,7 @@ function getFormData() {
     lugar: DOM.lugar.value.trim(),
     mesas: parseInt(DOM.mesas.value, 10) || 0,
     invitados: parseInt(DOM.invitados.value, 10) || 0,
-    barra: DOM.barraSi.checked,
+    personalBarra: parseInt(DOM.personalBarra.value, 10) || 0,
     horaInicio: DOM.horaInicio.value,
     horaFin: DOM.horaFin.value,
   };
@@ -210,17 +206,6 @@ function calcularMeseros(mesas) {
 }
 
 /**
- * Calcula el personal de barra según los invitados.
- * Regla: 2 personas de barra por cada 100 invitados.
- * @param {number} invitados - Número de invitados.
- * @returns {number} Personal de barra necesario.
- */
-function calcularBarra(invitados) {
-  if (!invitados || invitados <= 0) return 0;
-  return Math.ceil(invitados / CONFIG.INVITADOS_POR_BARRA) * CONFIG.PERSONAL_BARRA_POR_GRUPO;
-}
-
-/**
  * Calcula la duración del evento en horas.
  * Considera que el evento puede terminar al día siguiente.
  * @param {string} horaInicio - Hora de inicio en formato HH:mm.
@@ -229,21 +214,21 @@ function calcularBarra(invitados) {
  */
 function calcularDuracion(horaInicio, horaFin) {
   if (!horaInicio || !horaFin) return 0;
-  
+
   const [horasInicio, minutosInicio] = horaInicio.split(':').map(Number);
   const [horasFin, minutosFin] = horaFin.split(':').map(Number);
-  
+
   let minutosInicioTotal = horasInicio * 60 + minutosInicio;
   let minutosFinTotal = horasFin * 60 + minutosFin;
-  
+
   // Si la hora de fin es menor, asumimos que es al día siguiente
   if (minutosFinTotal <= minutosInicioTotal) {
     minutosFinTotal += 24 * 60; // Agregar 24 horas
   }
-  
+
   const duracionMinutos = minutosFinTotal - minutosInicioTotal;
   const duracionHoras = duracionMinutos / 60;
-  
+
   return Math.round(duracionHoras * 10) / 10; // Redondear a 1 decimal
 }
 
@@ -284,7 +269,7 @@ function formatTime(time24) {
  */
 function generarResumen(data) {
   const meseros = calcularMeseros(data.mesas);
-  const personalBarra = data.barra ? calcularBarra(data.invitados) : 0;
+  const personalBarra = data.personalBarra;
 
   return {
     nombre: data.nombre,
@@ -295,7 +280,6 @@ function generarResumen(data) {
     mesas: data.mesas,
     meseros,
     invitados: data.invitados,
-    barra: data.barra,
     personalBarra,
     horaInicio: formatTime(data.horaInicio),
     horaFin: formatTime(data.horaFin),
@@ -313,7 +297,7 @@ function generarResumen(data) {
  * @param {Object} resumen - Resumen generado.
  */
 function mostrarResumenPreview(resumen) {
-  const barraLine = resumen.barra
+  const barraLine = resumen.personalBarra > 0
     ? `<div class="preview-line">🍹 <strong>Personal de barra:</strong> ${resumen.personalBarra} persona(s)</div>`
     : '';
 
@@ -353,7 +337,7 @@ function buildWhatsAppMessage(resumen) {
   message += `👨‍🍳 *Meseros asignados:* ${resumen.meseros}\n`;
   message += `👥 *Invitados:* ${resumen.invitados}\n`;
 
-  if (resumen.barra) {
+  if (resumen.personalBarra > 0) {
     message += `🍹 *Personal de barra:* ${resumen.personalBarra} persona(s)\n`;
   }
 
@@ -391,24 +375,6 @@ function actualizarMeseros() {
     DOM.resultMeseros.style.display = 'flex';
   } else {
     DOM.resultMeseros.style.display = 'none';
-  }
-}
-
-/**
- * Actualiza el cálculo dinámico de personal de barra.
- */
-function actualizarBarra() {
-  const invitados = parseInt(DOM.invitados.value, 10);
-  const barraActiva = DOM.barraSi.checked;
-
-  if (barraActiva && invitados && invitados > 0) {
-    const personalBarra = calcularBarra(invitados);
-    DOM.resultBarraText.textContent = `Se asignarán ${personalBarra} persona(s) de barra.`;
-    DOM.resultBarra.style.display = 'flex';
-    DOM.barraHint.style.display = 'block';
-  } else {
-    DOM.resultBarra.style.display = 'none';
-    DOM.barraHint.style.display = barraActiva ? 'block' : 'none';
   }
 }
 
@@ -609,9 +575,6 @@ function init() {
 
   // Event listeners — Cálculos dinámicos
   DOM.mesas.addEventListener('input', actualizarMeseros);
-  DOM.invitados.addEventListener('input', actualizarBarra);
-  DOM.barraSi.addEventListener('change', actualizarBarra);
-  DOM.barraNo.addEventListener('change', actualizarBarra);
   DOM.horaInicio.addEventListener('input', actualizarDuracion);
   DOM.horaFin.addEventListener('input', actualizarDuracion);
 
@@ -624,12 +587,150 @@ function init() {
   // Event listener — Submit
   DOM.form.addEventListener('submit', handleFormSubmit);
 
+  // Inicializar carrusel
+  initCarousel();
+
+  // Inicializar galería completa
+  initGaleriaCompleta();
+
+  // Inicializar modal de comentarios
+  initFeedbackModal();
+
   // Log de inicialización (para desarrollo)
   console.log('✦ Meseros Yucatán — Cotizador inicializado correctamente.');
 }
 
 // Arrancar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', init);
+
+
+/* ═══════════════════════════════════════════
+   CARRUSEL — Control de galería de imágenes
+   ═══════════════════════════════════════════ */
+
+/**
+ * Inicializa el carrusel de galería con auto-avance y controles.
+ */
+function initCarousel() {
+  const slides = document.querySelectorAll('.carousel__slide');
+  const indicators = document.querySelectorAll('.carousel__indicator');
+  const btnPrev = document.getElementById('carouselPrev');
+  const btnNext = document.getElementById('carouselNext');
+
+  if (!slides.length) return;
+
+  let currentSlide = 0;
+  let autoPlayInterval;
+
+  /**
+   * Cambia al slide especificado.
+   * @param {number} index - Índice del slide.
+   */
+  function goToSlide(index) {
+    // Remover clases activas
+    slides[currentSlide].classList.remove('carousel__slide--active');
+    indicators[currentSlide].classList.remove('carousel__indicator--active');
+
+    // Actualizar índice
+    currentSlide = index;
+    if (currentSlide >= slides.length) currentSlide = 0;
+    if (currentSlide < 0) currentSlide = slides.length - 1;
+
+    // Agregar clases activas
+    slides[currentSlide].classList.add('carousel__slide--active');
+    indicators[currentSlide].classList.add('carousel__indicator--active');
+  }
+
+  /**
+   * Avanza al siguiente slide.
+   */
+  function nextSlide() {
+    goToSlide(currentSlide + 1);
+  }
+
+  /**
+   * Retrocede al slide anterior.
+   */
+  function prevSlide() {
+    goToSlide(currentSlide - 1);
+  }
+
+  /**
+   * Inicia el auto-avance del carrusel.
+   */
+  function startAutoPlay() {
+    stopAutoPlay(); // Limpiar cualquier intervalo previo
+    autoPlayInterval = setInterval(nextSlide, 7000); // Cambia cada 7 segundos
+  }
+
+  /**
+   * Detiene el auto-avance del carrusel.
+   */
+  function stopAutoPlay() {
+    if (autoPlayInterval) {
+      clearInterval(autoPlayInterval);
+      autoPlayInterval = null;
+    }
+  }
+
+  // Event Listeners
+  btnNext?.addEventListener('click', () => {
+    nextSlide();
+    stopAutoPlay();
+    startAutoPlay(); // Reiniciar timer
+  });
+
+  btnPrev?.addEventListener('click', () => {
+    prevSlide();
+    stopAutoPlay();
+    startAutoPlay(); // Reiniciar timer
+  });
+
+  // Indicadores
+  indicators.forEach((indicator, index) => {
+    indicator.addEventListener('click', () => {
+      goToSlide(index);
+      stopAutoPlay();
+      startAutoPlay(); // Reiniciar timer
+    });
+  });
+
+  // Pausar auto-avance al hacer hover
+  const carousel = document.querySelector('.carousel');
+  carousel?.addEventListener('mouseenter', stopAutoPlay);
+  carousel?.addEventListener('mouseleave', startAutoPlay);
+
+  // Soporte táctil para swipe
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  carousel?.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+
+  carousel?.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+  }, { passive: true });
+
+  function handleSwipe() {
+    const swipeThreshold = 50;
+    const diff = touchStartX - touchEndX;
+
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+      stopAutoPlay();
+      startAutoPlay();
+    }
+  }
+
+  // Iniciar auto-avance
+  startAutoPlay();
+}
 
 
 /* ─────────────────────────────────────────
@@ -655,3 +756,282 @@ document.addEventListener('DOMContentLoaded', init);
      }
    }
 */
+
+
+/* ═══════════════════════════════════════════
+   GALERÍA COMPLETA - FILTRADO
+   ═══════════════════════════════════════════ */
+
+/**
+ * Configuración de la galería completa
+ */
+const GALERIA_CONFIG = {
+  categorias: {
+    'bodas': { nombre: 'Bodas', carpeta: 'bodas' },
+    'xv-anios': { nombre: 'XV Años', carpeta: 'xv-anios' },
+    'cumpleanos': { nombre: 'Cumpleaños', carpeta: 'cumpleanos' },
+    'aniversarios': { nombre: 'Aniversarios', carpeta: 'aniversarios' },
+    'fiestas': { nombre: 'Fiestas', carpeta: 'fiestas' },
+    'posadas': { nombre: 'Posadas', carpeta: 'posadas' }
+  },
+  basePath: 'assets/images/'
+};
+
+/**
+ * Imágenes por categoría (agregar aquí las imágenes manualmente)
+ */
+const GALERIA_IMAGENES = {
+  'bodas': [
+    { archivo: 'Boda.jpeg', titulo: 'Boda Elegante' }
+  ],
+  'xv-anios': [
+    { archivo: 'XVzoe.jpeg', titulo: 'XV Años Zoe' },
+    { archivo: 'copasXV.jpeg', titulo: 'Brindis XV Años' }
+  ],
+  'cumpleanos': [],
+  'aniversarios': [],
+  'fiestas': [],
+  'posadas': []
+};
+
+/**
+ * Inicializa la galería completa
+ */
+function initGaleriaCompleta() {
+  const grid = document.getElementById('galeriaGrid');
+  const filtros = document.querySelectorAll('.galeria-filtros__btn');
+
+  if (!grid || filtros.length === 0) return;
+
+  // Renderizar categoría 'bodas' al inicio
+  renderGaleria('bodas');
+
+  // Agregar eventos a los filtros
+  filtros.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Remover active de todos
+      filtros.forEach(b => b.classList.remove('galeria-filtros__btn--active'));
+
+      // Agregar active al clickeado
+      btn.classList.add('galeria-filtros__btn--active');
+
+      // Filtrar galería
+      const categoria = btn.dataset.categoria;
+      renderGaleria(categoria);
+    });
+  });
+}
+
+/**
+ * Renderiza la galería según la categoría seleccionada
+ */
+function renderGaleria(categoria) {
+  const grid = document.getElementById('galeriaGrid');
+  if (!grid) return;
+
+  // Limpiar grid
+  grid.innerHTML = '';
+
+  let imagenes = [];
+
+  // Obtener imágenes según categoría
+  if (categoria === 'todas') {
+    // Agregar todas las imágenes de todas las categorías
+    Object.keys(GALERIA_IMAGENES).forEach(cat => {
+      GALERIA_IMAGENES[cat].forEach(img => {
+        imagenes.push({
+          ...img,
+          categoria: cat,
+          categoriaNombre: GALERIA_CONFIG.categorias[cat].nombre,
+          carpeta: GALERIA_CONFIG.categorias[cat].carpeta
+        });
+      });
+    });
+  } else {
+    // Agregar solo imágenes de la categoría seleccionada
+    if (GALERIA_IMAGENES[categoria]) {
+      imagenes = GALERIA_IMAGENES[categoria].map(img => ({
+        ...img,
+        categoria: categoria,
+        categoriaNombre: GALERIA_CONFIG.categorias[categoria].nombre,
+        carpeta: GALERIA_CONFIG.categorias[categoria].carpeta
+      }));
+    }
+  }
+
+  // Si no hay imágenes, no mostrar nada
+  if (imagenes.length === 0) {
+    return;
+  }
+
+  // Renderizar imágenes
+  imagenes.forEach((img, index) => {
+    const item = document.createElement('div');
+    item.className = 'galeria-item';
+    item.style.animationDelay = `${(index % 6) * 0.1}s`;
+
+    item.innerHTML = `
+            <img 
+                src="${GALERIA_CONFIG.basePath}${img.carpeta}/${img.archivo}" 
+                alt="${img.titulo}"
+                class="galeria-item__img"
+                loading="lazy"
+            >
+            <div class="galeria-item__overlay">
+                <h3 class="galeria-item__title">${img.titulo}</h3>
+                <p class="galeria-item__category">${img.categoriaNombre}</p>
+            </div>
+        `;
+
+    grid.appendChild(item);
+  });
+}
+
+
+/* ═══════════════════════════════════════════
+   MODAL DE COMENTARIOS Y SUGERENCIAS
+   ═══════════════════════════════════════════ */
+
+/**
+ * Configuración EmailJS para comentarios
+ * Cambiar estos valores por los de tu cuenta EmailJS
+ */
+const EMAILJS_CONFIG_FEEDBACK = {
+  serviceID: 'service_vupug89',    // Service ID configurado
+  templateID: 'template_dd4t67c',  // Template ID configurado
+  publicKey: 'e1y0lBACakyS17xiq'   // Public Key configurado
+};
+
+/**
+ * Inicializa el modal de comentarios
+ */
+function initFeedbackModal() {
+  const modal = document.getElementById('feedbackModal');
+  const openBtn = document.getElementById('feedbackBtn');
+  const closeBtn = document.getElementById('modalClose');
+  const form = document.getElementById('feedbackForm');
+  const successDiv = document.getElementById('feedbackSuccess');
+
+  if (!modal || !openBtn || !closeBtn || !form) return;
+
+  // Abrir modal
+  openBtn.addEventListener('click', () => {
+    modal.classList.add('modal-overlay--active');
+    document.body.style.overflow = 'hidden';
+  });
+
+  // Cerrar modal
+  const closeModal = () => {
+    modal.classList.remove('modal-overlay--active');
+    document.body.style.overflow = '';
+    // Resetear después de la animación
+    setTimeout(() => {
+      form.style.display = 'flex';
+      successDiv.classList.remove('modal__success--active');
+      form.reset();
+    }, 300);
+  };
+
+  closeBtn.addEventListener('click', closeModal);
+
+  // Cerrar al hacer clic fuera del modal
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
+  // Cerrar con tecla ESC
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('modal-overlay--active')) {
+      closeModal();
+    }
+  });
+
+  // Manejar envío del formulario
+  form.addEventListener('submit', handleFeedbackSubmit);
+}
+
+/**
+ * Maneja el envío del formulario de comentarios
+ */
+async function handleFeedbackSubmit(e) {
+  e.preventDefault();
+
+  const form = e.target;
+  const submitBtn = form.querySelector('.btn--primary');
+  const comentario = document.getElementById('feedbackComentario').value.trim();
+
+  // Validar comentario
+  if (!comentario) {
+    alert('Por favor, escribe tu comentario.');
+    return;
+  }
+
+  // Deshabilitar botón
+  submitBtn.disabled = true;
+  submitBtn.classList.add('btn--loading');
+
+  try {
+    // Obtener datos del formulario
+    const feedbackData = {
+      from_name: document.getElementById('feedbackNombre').value.trim() || 'Anónimo',
+      user_phone: document.getElementById('feedbackTelefono').value.trim() || 'No proporcionado',
+      message: comentario,
+      date: new Date().toLocaleDateString('es-MX', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    };
+
+    console.log('📤 Enviando datos:', feedbackData); // Debug
+
+    // Enviar con EmailJS
+    await emailjs.send(
+      EMAILJS_CONFIG_FEEDBACK.serviceID,
+      EMAILJS_CONFIG_FEEDBACK.templateID,
+      feedbackData,
+      EMAILJS_CONFIG_FEEDBACK.publicKey
+    );
+
+    // Mostrar mensaje de éxito
+    form.style.display = 'none';
+    document.getElementById('feedbackSuccess').classList.add('modal__success--active');
+
+    // Log para desarrollo
+    console.log('📧 Comentario enviado:', feedbackData);
+
+  } catch (error) {
+    console.error('Error al enviar comentario:', error);
+    alert('Hubo un error al enviar tu comentario. Por favor, intenta de nuevo.');
+  } finally {
+    // Rehabilitar botón
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('btn--loading');
+  }
+}
+
+/**
+ * Enviar comentario (función independiente para futuro uso)
+ */
+async function enviarComentario(nombre, telefono, comentario) {
+  try {
+    const feedbackData = {
+      nombre: nombre || 'Anónimo',
+      telefono: telefono || 'No proporcionado',
+      comentario: comentario,
+      fecha: new Date().toLocaleDateString('es-MX')
+    };
+
+    // Integración con EmailJS
+    // await emailjs.send(...);
+
+    return { success: true, data: feedbackData };
+  } catch (error) {
+    console.error('Error:', error);
+    return { success: false, error };
+  }
+}
