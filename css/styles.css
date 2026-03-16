@@ -1203,6 +1203,29 @@ textarea {
     border-color: var(--color-gold);
 }
 
+/* ── Botón flotante WhatsApp ── */
+.whatsapp-float {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #25d366;
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.whatsapp-float:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
 .footer__bottom {
     text-align: center;
     padding-top: var(--space-xl);
