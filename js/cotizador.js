@@ -19,7 +19,7 @@ const CONFIG = Object.freeze({
   PERSONAL_BARRA_POR_GRUPO: 2,
 
   // WhatsApp
-  WHATSAPP_NUMBER: '5219981447597',
+  WHATSAPP_NUMBER: '5219991553227',
   WHATSAPP_BASE_URL: 'https://wa.me/',
 
   // Validaciones
@@ -329,20 +329,20 @@ function mostrarResumenPreview(resumen) {
  */
 function buildWhatsAppMessage(resumen) {
   let message = `Hola, me gustaría cotizar un evento:\n\n`;
-  message += `👤 *Nombre:* ${resumen.nombre}\n`;
-  message += `📞 *Teléfono:* ${resumen.telefono}\n`;
-  message += `📅 *Fecha:* ${resumen.fecha}\n`;
-  message += `📍 *Lugar:* ${resumen.lugar}\n`;
-  message += `🍽 *Mesas:* ${resumen.mesas}\n`;
-  message += `👨‍🍳 *Meseros asignados:* ${resumen.meseros}\n`;
-  message += `👥 *Invitados:* ${resumen.invitados}\n`;
+  message += `*Nombre:* ${resumen.nombre}\n`;
+  message += `*Teléfono:* ${resumen.telefono}\n`;
+  message += `*Fecha:* ${resumen.fecha}\n`;
+  message += `*Lugar:* ${resumen.lugar}\n`;
+  message += `*Mesas:* ${resumen.mesas}\n`;
+  message += `*Meseros asignados:* ${resumen.meseros}\n`;
+  message += `*Invitados:* ${resumen.invitados}\n`;
 
   if (resumen.personalBarra > 0) {
-    message += `🍹 *Personal de barra:* ${resumen.personalBarra} persona(s)\n`;
+    message += `*Personal de barra:* ${resumen.personalBarra} persona(s)\n`;
   }
 
-  message += `⏰ *Horario:* ${resumen.horario}\n`;
-  message += `\nQuedo pendiente de información y disponibilidad. ✨`;
+  message += `*Horario:* ${resumen.horario}\n`;
+  message += `\nQuedo pendiente de información y disponibilidad.`;
 
   return message;
 }
